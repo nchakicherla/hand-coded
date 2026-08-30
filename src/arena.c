@@ -132,7 +132,7 @@ void *arena_zalloc(Arena *a, size_t size, size_t alignment) {
 }
 
 void *arena_grow_alloc(void *ptr, size_t old_size, size_t new_size, Arena *a) {
-	void *output_ptr = arena_alloc(a, new_size, 32); // use default alignment of 32
+	void *output_ptr = arena_alloc(a, new_size, alignof(max_align_t)); // use max_align_t supported by C11
 	memcpy(output_ptr, ptr, old_size);
 	return output_ptr;
 }

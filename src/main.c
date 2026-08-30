@@ -10,9 +10,9 @@ int main(void) {
 	Arena arena;
 	arena_init(&arena);
 
-	char *test_alloc = arena_alloc(&arena, 1024, alignof(char));
+	char *test_alloc = arena_alloc(&arena, 1000000, alignof(char));
 
-	for (size_t i = 0; i < 1024; i++) {
+	for (size_t i = 0; i < 1000000; i++) {
 		test_alloc[i] = 'a';
 		printf("%c", test_alloc[i]);
 	}
