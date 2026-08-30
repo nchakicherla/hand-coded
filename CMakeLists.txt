@@ -6,6 +6,6 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 add_compile_options(-Wall -Wextra)
 
-set(SOURCES src/main.c)
+set(SOURCES src/main.c src/arena.c)
 
 add_executable(main ${SOURCES})
