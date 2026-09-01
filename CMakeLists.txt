@@ -8,4 +8,8 @@ add_compile_options(-Wall -Wextra)
 
 set(SOURCES src/main.c src/arena.c src/file.c)
 
+add_library(csv STATIC external/libcsv/libcsv.c)
+target_include_directories(csv PUBLIC external/libcsv)
+
 add_executable(main ${SOURCES})
+target_link_libraries(main PRIVATE csv)
