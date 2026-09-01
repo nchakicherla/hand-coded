@@ -1,0 +1,8 @@
+id,name,quote,city,notes
+1,Ada Lovelace,The only way to do great work is to love what you do.,London,First programmer
+2,Grace Hopper,"Said: ""It's easier to ask forgiveness than permission.""",New York,"plain field, no special chars"
+3,Alan Turing,Sometimes it is the people no one imagines anything of who do the things that no one can imagine.,"London, England",city field has an embedded comma
+4,Margaret Hamilton,"She said: ""Software engineering"" was her own term.",Cambridge,"quote field has embedded double quotes, escaped as """""
+5,Katherine Johnson,"Line one of a note.
+Line two of the same note.",Hampton,notes field with an embedded newline inside quotes
+6,John von Neumann,,Budapest,empty quote field to test blank-but-present handling
