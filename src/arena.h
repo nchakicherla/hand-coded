@@ -29,6 +29,7 @@ int arena_reset(Arena *a);
 void *arena_alloc(Arena *a, size_t size, size_t alignment);
 void *arena_zalloc(Arena *a, size_t size, size_t alignment);
 void *arena_grow_alloc(void *ptr, size_t old_size, size_t new_size, Arena *a);
+void *arena_grow_alloc_zeroed(void *ptr, size_t old_size, size_t new_size, Arena *a);
 char *arena_new_str(char *str, Arena *a);
 size_t arena_get_bytes_used(Arena *a);
 size_t arena_get_bytes_allocd(Arena *a);
