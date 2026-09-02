@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdalign.h>
 
 #include "csv.h"
 
@@ -51,6 +52,24 @@ static void cb_row_counter(int c, void *data) {
 	return;
 }
 
+typedef struct {
+	char *data;
+	size_t *offsets;
+	size_t byte_cursor;
+	size_t cell_index;
+} CsvCopier;
+
+static void cb_field_copier(void *field, size_t field_len, void *data) {
+	CsvCopier *copier = (CsvCopier *)data;
+	
+	copier->offsets[copier->cell_index] = copier->byte_cursor;
+	memcpy(copier->data + copier->byte_cursor, field, field_len);
+	
+	copier->byte_cursor += field_len;
+	copier->cell_index++;
+	return;
+}
+
 int main(void) {
 	Arena arena;
 	arena_init(&arena);
@@ -59,16 +78,12 @@ int main(void) {
 	const char *csv_path = "./resources/sample.csv";
 	char *csv_buffer = file_read_all(&arena, csv_path, &csv_size);
 
-	CsvCounter counter = { 
-		.col = 0,
-		.row = 0
-	};
+	CsvCounter counter = {0};
 
 	struct csv_parser parser;
 	csv_init(&parser, 0);
 	csv_parse(&parser, csv_buffer, csv_size, cb_field_counter, cb_row_counter, &counter);
 	csv_fini(&parser, cb_field_counter, cb_row_counter, &counter);
-	csv_free(&parser);
 
 	printf("total num rows: %zu\n", counter.num_rows);
 	printf("total num cols: %zu\n", counter.num_cols);
@@ -80,7 +95,21 @@ int main(void) {
 		return 1;
 	}
 
-	
+	CsvCopier copier = {0};
+
+	copier.data = arena_alloc(&arena, counter.total_bytes + 1, alignof(char));
+	copier.offsets = arena_alloc(
+		&arena,
+		(counter.num_cols * counter.num_rows + 1) * sizeof(size_t), 
+		alignof(size_t)
+	);
+
+	csv_parse(&parser, csv_buffer, csv_size, cb_field_copier, NULL, &copier);
+	csv_fini(&parser, cb_field_copier, NULL, &copier);
+	csv_free(&parser);
+
+	copier.data[counter.total_bytes] = '\0';
+	copier.offsets[copier.cell_index] = copier.byte_cursor;
 
 	arena_term(&arena);
 	return 0;
