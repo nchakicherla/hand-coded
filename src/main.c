@@ -12,11 +12,12 @@ typedef struct {
 	size_t row;
 	size_t num_cols;
 	size_t num_rows;
+	size_t total_bytes;
 
 	bool jagged_csv;
 } CsvCounter;
 
-static void cb_field(void *field, size_t field_len, void *data) {
+static void cb_field_counter(void *field, size_t field_len, void *data) {
 	(void)field;
 	(void)field_len;
 
@@ -24,10 +25,11 @@ static void cb_field(void *field, size_t field_len, void *data) {
 
 	printf("%zu ", counter->col);
 	counter->col++;
+	counter->total_bytes += field_len;
 	return;
 }
 
-static void cb_row(int c, void *data) {
+static void cb_row_counter(int c, void *data) {
 	(void)c;
 	CsvCounter *counter = (CsvCounter *)data;
 
@@ -64,18 +66,21 @@ int main(void) {
 
 	struct csv_parser parser;
 	csv_init(&parser, 0);
-	csv_parse(&parser, csv_buffer, csv_size, cb_field, cb_row, &counter);
-	csv_fini(&parser, cb_field, cb_row, &counter);
+	csv_parse(&parser, csv_buffer, csv_size, cb_field_counter, cb_row_counter, &counter);
+	csv_fini(&parser, cb_field_counter, cb_row_counter, &counter);
 	csv_free(&parser);
 
 	printf("total num rows: %zu\n", counter.num_rows);
 	printf("total num cols: %zu\n", counter.num_cols);
+	printf("total bytes: %zu\n", counter.total_bytes);
 
 	if (counter.jagged_csv) {
 		fprintf(stderr, "error: aborting due to jagged CSV: %s\n", csv_path);
 		arena_term(&arena);
 		return 1;
 	}
+
+	
 
 	arena_term(&arena);
 	return 0;
