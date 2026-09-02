@@ -91,6 +91,7 @@ int main(void) {
 
 	if (counter.jagged_csv) {
 		fprintf(stderr, "error: aborting due to jagged CSV: %s\n", csv_path);
+		csv_free(&parser);
 		arena_term(&arena);
 		return 1;
 	}
@@ -98,11 +99,7 @@ int main(void) {
 	CsvCopier copier = {0};
 
 	copier.data = arena_alloc(&arena, counter.total_bytes + 1, alignof(char));
-	copier.offsets = arena_alloc(
-		&arena,
-		(counter.num_cols * counter.num_rows + 1) * sizeof(size_t), 
-		alignof(size_t)
-	);
+	copier.offsets = arena_alloc(&arena, (counter.num_cols * counter.num_rows + 1) * sizeof(size_t), alignof(size_t));
 
 	csv_parse(&parser, csv_buffer, csv_size, cb_field_copier, NULL, &copier);
 	csv_fini(&parser, cb_field_copier, NULL, &copier);
