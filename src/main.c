@@ -70,6 +70,18 @@ static void cb_field_copier(void *field, size_t field_len, void *data) {
 	return;
 }
 
+typedef struct {
+	char *data;
+	char **rows;
+} Column;
+
+typedef struct {
+	Column *columns;
+	Arena arena;
+	size_t num_cols;
+	size_t num_rows;
+} Table;
+
 int main(void) {
 	Arena arena;
 	arena_init(&arena);
@@ -109,7 +121,56 @@ int main(void) {
 	copier.offsets[copier.cell_index] = copier.byte_cursor;
 
 	for (size_t i = 0; i < counter.num_rows * counter.num_cols; i++) {
-		printf("%.*s\n", (int)(copier.offsets[i + 1] - copier.offsets[i]), &copier.data[copier.offsets[i]]);
+		if (i % counter.num_cols == 0) {
+			printf("-- row %zu --\n", i / counter.num_cols);
+		}
+		printf("-- col %zu --\n", i % counter.num_cols);
+		printf("%.*s ", (int)(copier.offsets[i + 1] - copier.offsets[i]), &copier.data[copier.offsets[i]]);
+		printf("[cell len: %zu]\n", copier.offsets[i + 1] - copier.offsets[i]);
+	}
+
+	size_t *col_lens = arena_alloc(&arena, counter.num_cols * sizeof(size_t), alignof(size_t));
+
+	for (size_t i = 0; i < counter.num_cols * counter.num_rows; i++) {
+		size_t field_len = copier.offsets[i + 1] - copier.offsets[i];
+		col_lens[i % counter.num_cols] += field_len + 1; // account for null-termination
+	}
+
+	for (size_t i = 0; i < counter.num_cols; i++) {
+		printf("col %zu len: %zu\n", i, col_lens[i]);
+	}
+
+	Table table = {0};
+	arena_init(&table.arena);
+
+	table.num_cols = counter.num_cols;
+	table.num_rows = counter.num_rows;
+	table.columns = arena_alloc(&table.arena, table.num_cols * sizeof(Column), alignof(Column));
+
+	for (size_t i = 0; i < table.num_cols; i++) {
+		table.columns[i].data = arena_alloc(&table.arena, col_lens[i], alignof(char));
+		table.columns[i].rows = arena_alloc(&table.arena, table.num_rows * sizeof(char *), alignof(char *));
+	}
+
+	size_t *col_cursors = arena_zalloc(&arena, counter.num_cols * sizeof(size_t), alignof(size_t));
+
+	for (size_t i = 0; i < counter.num_rows * counter.num_cols; i++) {
+		size_t row = i / counter.num_cols;
+		size_t col = i % counter.num_cols;
+		size_t field_len = copier.offsets[i + 1] - copier.offsets[i];
+
+		char *dest = table.columns[col].data + col_cursors[col];
+		memcpy(dest, &copier.data[copier.offsets[i]], field_len);
+		dest[field_len] = '\0';
+
+		table.columns[col].rows[row] = dest;
+		col_cursors[col] += field_len + 1;
+	}
+
+	printf("print row 2...\n");
+
+	for (size_t i = 0; i < table.num_cols; i++) {
+		printf("%s ", table.columns[i].rows[2]);
 	}
 
 	arena_term(&arena);
