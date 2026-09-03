@@ -6,7 +6,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 add_compile_options(-Wall -Wextra)
 
-set(SOURCES src/main.c src/arena.c src/file.c)
+set(SOURCES src/main.c src/arena.c src/file.c src/csv_table.c)
 
 add_library(csv STATIC external/libcsv/libcsv.c)
 target_include_directories(csv PUBLIC external/libcsv)
