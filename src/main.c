@@ -108,6 +108,10 @@ int main(void) {
 	copier.data[counter.total_bytes] = '\0';
 	copier.offsets[copier.cell_index] = copier.byte_cursor;
 
+	for (size_t i = 0; i < counter.num_rows * counter.num_cols; i++) {
+		printf("%.*s\n", (int)(copier.offsets[i + 1] - copier.offsets[i]), &copier.data[copier.offsets[i]]);
+	}
+
 	arena_term(&arena);
 	return 0;
 }
