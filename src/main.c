@@ -4,7 +4,7 @@
 
 int main(void) {
 	Table table;
-	CsvTableError err = csv_table_load("./resources/sample.csv", &table);
+	CsvTableError err = csv_table_load("./resources/sample_jagged.csv", &table);
 
 	switch (err) {
 	case CSV_TABLE_ERR_FILE:
@@ -12,7 +12,7 @@ int main(void) {
 		return 1;
 	case CSV_TABLE_ERR_JAGGED:
 		fprintf(stderr, "error: jagged CSV\n");
-		return 1;
+		return 2;
 	case CSV_TABLE_OK:
 		break;
 	}
