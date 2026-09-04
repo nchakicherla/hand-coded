@@ -13,7 +13,7 @@ int main(void) {
 		return 1;
 	case CSV_TABLE_ERR_JAGGED:
 		fprintf(stderr, "error: jagged CSV\n");
-		return 1;
+		return 2;
 	case CSV_TABLE_OK:
 		break;
 	}
