@@ -3,8 +3,9 @@
 #include "csv_table.h"
 
 int main(void) {
+	const char* csv_path = "./resources/sample.csv";
 	Table table;
-	CsvTableError err = csv_table_load("./resources/sample.csv", &table);
+	CsvTableError err = csv_table_load(csv_path, &table);
 
 	switch (err) {
 	case CSV_TABLE_ERR_FILE:
@@ -17,12 +18,7 @@ int main(void) {
 		break;
 	}
 
-	for (size_t row = 0; row < table.num_rows; row++) {
-		for (size_t col = 0; col < table.num_cols; col++) {
-			printf("%s ", table.columns[col].rows[row]);
-		}
-		printf("\n");
-	}
+	printf("successfully created table from %s\n", csv_path);
 
 	csv_table_free(&table);
 	return 0;
