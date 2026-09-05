@@ -3,11 +3,11 @@
 #include "csv_table.h"
 
 int main(void) {
-	const char* csv_path = "./resources/sample.csv";
+	const char* csv_path = "./resources/sample_large.csv";
 	Table table;
-	CsvTableError err = csv_table_load(csv_path, &table);
+	CsvTableStatus stat = csv_table_load(csv_path, &table);
 
-	switch (err) {
+	switch (stat) {
 	case CSV_TABLE_ERR_FILE:
 		fprintf(stderr, "error: could not read CSV file\n");
 		return 1;

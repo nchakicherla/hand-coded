@@ -65,7 +65,7 @@ static void cb_field_copier(void *field, size_t field_len, void *data) {
 	return;
 }
 
-CsvTableError csv_table_load(const char *path, Table *out_table) {
+CsvTableStatus csv_table_load(const char *path, Table *out_table) {
 	Arena scratch;
 	arena_init(&scratch);
 
