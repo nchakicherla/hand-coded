@@ -14,6 +14,9 @@ int main(void) {
 		case CSV_TABLE_ERR_JAGGED:
 			fprintf(stderr, "error: jagged CSV\n");
 			return 2;
+		case CSV_TABLE_ERR_PARSE:
+			fprintf(stderr, "error: couldn't parse CSV\n");
+			return 3;
 		case CSV_TABLE_OK:
 			break;
 	}

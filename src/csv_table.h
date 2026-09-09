@@ -21,6 +21,7 @@ typedef enum {
 	CSV_TABLE_OK = 0,
 	CSV_TABLE_ERR_FILE,
 	CSV_TABLE_ERR_JAGGED,
+	CSV_TABLE_ERR_PARSE
 } CsvTableStatus;
 
 CsvTableStatus csv_table_load(const char *path, Table *out_table);

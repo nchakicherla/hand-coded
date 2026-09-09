@@ -79,9 +79,22 @@ CsvTableStatus csv_table_load(const char *path, Table *out_table) {
 	CsvCounter counter = {0};
 
 	struct csv_parser parser;
-	csv_init(&parser, 0);
-	csv_parse(&parser, csv_buffer, csv_size, cb_field_counter, cb_row_counter, &counter);
-	csv_fini(&parser, cb_field_counter, cb_row_counter, &counter);
+	csv_init(&parser, CSV_STRICT | CSV_STRICT_FINI);
+	size_t parsed = csv_parse(&parser, csv_buffer, csv_size, cb_field_counter, cb_row_counter, &counter);
+	if (parsed != csv_size) {
+		int error = csv_error(&parser);
+		fprintf(stderr, "CSV parsing (counting pass) aborted near byte %zu: %s\n", parsed, csv_strerror(error));
+		csv_free(&parser);
+		arena_term(&scratch);
+		return CSV_TABLE_ERR_PARSE;
+	}
+	if (csv_fini(&parser, cb_field_counter, cb_row_counter, &counter) != 0) {
+		int error = csv_error(&parser);
+		fprintf(stderr, "CSV finalization (counting pass) failed: %s\n", csv_strerror(error));
+		csv_free(&parser);
+		arena_term(&scratch);
+		return CSV_TABLE_ERR_PARSE;
+	}
 
 	if (counter.jagged_csv) {
 		csv_free(&parser);
@@ -94,8 +107,21 @@ CsvTableStatus csv_table_load(const char *path, Table *out_table) {
 	copier.data = arena_alloc(&scratch, counter.total_bytes + 1, alignof(char));
 	copier.offsets = arena_alloc(&scratch, (counter.num_cols * counter.num_rows + 1) * sizeof(size_t), alignof(size_t));
 
-	csv_parse(&parser, csv_buffer, csv_size, cb_field_copier, NULL, &copier);
-	csv_fini(&parser, cb_field_copier, NULL, &copier);
+	parsed = csv_parse(&parser, csv_buffer, csv_size, cb_field_copier, NULL, &copier);
+	if (parsed != csv_size) {
+		int error = csv_error(&parser);
+		fprintf(stderr, "CSV parsing (copy pass) aborted near byte %zu: %s\n", parsed, csv_strerror(error));
+		csv_free(&parser);
+		arena_term(&scratch);
+		return CSV_TABLE_ERR_PARSE;
+	}
+	if (csv_fini(&parser, cb_field_copier, NULL, &copier) != 0) {
+		int error = csv_error(&parser);
+		fprintf(stderr, "CSV finalization (copy pass) failed: %s\n", csv_strerror(error));
+		csv_free(&parser);
+		arena_term(&scratch);
+		return CSV_TABLE_ERR_PARSE;
+	}
 	csv_free(&parser);
 
 	copier.data[counter.total_bytes] = '\0';
