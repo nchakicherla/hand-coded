@@ -65,7 +65,7 @@ static void cb_field_copier(void *field, size_t field_len, void *data) {
 	return;
 }
 
-CsvTableStatus csv_table_load(const char *path, Table *out_table) {
+CsvTableStatus csv_table_load(const char *path, bool has_header, Table *out_table) {
 	Arena scratch;
 	arena_init(&scratch);
 
@@ -137,11 +137,15 @@ CsvTableStatus csv_table_load(const char *path, Table *out_table) {
 	Table table = {0};
 	arena_init(&table.arena);
 
+	size_t header_rows = has_header && counter.num_rows > 0 ? 1 : 0;
+
+	table.has_header = has_header;
 	table.num_cols = counter.num_cols;
-	table.num_rows = counter.num_rows;
+	table.num_rows = counter.num_rows - header_rows;
 	table.columns = arena_alloc(&table.arena, table.num_cols * sizeof(Column), alignof(Column));
 
 	for (size_t i = 0; i < table.num_cols; i++) {
+		table.columns[i].name = NULL;
 		table.columns[i].data = arena_alloc(&table.arena, col_lens[i], alignof(char));
 		table.columns[i].rows = arena_alloc(&table.arena, table.num_rows * sizeof(char *), alignof(char *));
 	}
@@ -157,7 +161,11 @@ CsvTableStatus csv_table_load(const char *path, Table *out_table) {
 		memcpy(dest, &copier.data[copier.offsets[i]], field_len);
 		dest[field_len] = '\0';
 
-		table.columns[col].rows[row] = dest;
+		if (has_header && row == 0) {
+			table.columns[col].name = dest;
+		} else {
+			table.columns[col].rows[row - header_rows] = dest;
+		}
 		col_cursors[col] += field_len + 1;
 	}
 

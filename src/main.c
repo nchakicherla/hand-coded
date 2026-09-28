@@ -5,7 +5,7 @@
 int main(void) {
 	const char* csv_path = "./resources/sample_large.csv";
 	Table table;
-	CsvTableStatus stat = csv_table_load(csv_path, &table);
+	CsvTableStatus stat = csv_table_load(csv_path, true, &table);
 
 	switch (stat) {
 		case CSV_TABLE_ERR_FILE:
