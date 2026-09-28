@@ -10,6 +10,25 @@
 #define MEMORY_HOG_FACTOR 4
 #define DEF_BLOCK_SIZE 4096
 
+static void arena_size_overflow(void) {
+	fprintf(stderr, "arena size overflow! exiting...\n");
+	exit(3);
+}
+
+static size_t checked_add_size(size_t a, size_t b) {
+	if (a > SIZE_MAX - b) {
+		arena_size_overflow();
+	}
+	return a + b;
+}
+
+static size_t checked_mul_size(size_t a, size_t b) {
+	if (a != 0 && b > SIZE_MAX / a) {
+		arena_size_overflow();
+	}
+	return a * b;
+}
+
 static ArenaBlock *alloc_init_block(size_t block_size) {
 
 	ArenaBlock *block =  malloc(sizeof(ArenaBlock));
@@ -36,7 +55,7 @@ int arena_init(Arena *a) {
 	a->first_block = alloc_init_block(block_size);
 
 	a->bytes_used = 0;
-	a->bytes_allocd = sizeof(Arena) + sizeof(ArenaBlock) + block_size;
+	a->bytes_allocd = checked_add_size(checked_add_size(sizeof(Arena), sizeof(ArenaBlock)), block_size);
 	a->next_free = a->first_block->data;
 	a->next_free_size = a->first_block->data_size;
 	a->last_block_size = block_size;
@@ -77,50 +96,61 @@ int arena_reset(Arena *a) { // preserves last_block_size from pre-reset
 	a->next_free_size = a->first_block->data_size;
 
 	a->bytes_used = 0;
-	a->bytes_allocd = sizeof(Arena) + sizeof(ArenaBlock) + a->last_block_size;
+	a->bytes_allocd = checked_add_size(checked_add_size(sizeof(Arena), sizeof(ArenaBlock)), a->last_block_size);
 	return 0;
 }
 
 void *arena_alloc(Arena *a, size_t size, size_t alignment) {
 
+	if (alignment == 0 || (alignment & (alignment - 1)) != 0) {
+		fprintf(stderr, "invalid arena alignment! exiting...\n");
+		exit(3);
+	}
+
 	// bump up per alignment
 	size_t current = (size_t)a->next_free;
-	size_t aligned = (current + alignment - 1) & ~(alignment - 1);
+	size_t aligned = checked_add_size(current, alignment - 1) & ~(alignment - 1);
 	size_t padding = aligned - current;
+	size_t required = checked_add_size(size, padding);
 
-	if(a->next_free_size < size + padding) {
+	if(a->next_free_size < required) {
 		ArenaBlock *last_block = a->last_block;
 		ArenaBlock *new_block = NULL;
 
 		size_t new_block_size = a->last_block_size;
 
-		while(new_block_size < size * MEMORY_HOG_FACTOR) {
-			new_block_size = new_block_size * 2;
+		size_t target_size = checked_mul_size(size, MEMORY_HOG_FACTOR);
+		size_t alignment_size = checked_add_size(size, alignment - 1);
+		if (target_size < alignment_size) {
+			target_size = alignment_size;
+		}
+		while(new_block_size < target_size) {
+			new_block_size = checked_mul_size(new_block_size, 2);
 		}
 
 		new_block = alloc_init_block(new_block_size);
-		if(!new_block) {
-			exit(3); // alloc_init_block itself should exit() if malloc fails but putting exit(3) here anyway
-		}
+		size_t new_current = (size_t)new_block->data;
+		size_t new_aligned = checked_add_size(new_current, alignment - 1) & ~(alignment - 1);
+		size_t new_padding = new_aligned - new_current;
+		size_t new_required = checked_add_size(size, new_padding);
 		last_block->next = new_block;
-		last_block = new_block;
 
 		a->last_block = new_block;
 		a->last_block_size = new_block_size;
-		a->next_free = (char *)last_block->data + size;
-		a->next_free_size = new_block_size - size;
+		a->next_free = (void *)checked_add_size(new_aligned, size);
+		a->next_free_size = new_block_size - new_required;
 
-		a->bytes_used += size + padding;
-		a->bytes_allocd += sizeof(ArenaBlock) + new_block_size;
+		a->bytes_used = checked_add_size(a->bytes_used, new_required);
+		a->bytes_allocd = checked_add_size(a->bytes_allocd, checked_add_size(sizeof(ArenaBlock), new_block_size));
 
-		return last_block->data;
+		return (void *)new_aligned;
 	}
 
 	void *output = (void *)aligned;
-	a->next_free = (void *)(aligned + size);
-	a->next_free_size  = a->next_free_size - (size + padding);
+	a->next_free = (void *)checked_add_size(aligned, size);
+	a->next_free_size  = a->next_free_size - required;
 
-	a->bytes_used += size + padding;
+	a->bytes_used = checked_add_size(a->bytes_used, required);
 
 	return output;
 }
@@ -152,7 +182,7 @@ char *arena_new_str(char *str, Arena *a) {
 	char *output = NULL;
 	size_t len = strlen(str);
 
-	output = arena_alloc(a, len + 1, alignof(char));
+	output = arena_alloc(a, checked_add_size(len, 1), alignof(char));
 
 	memcpy(output, str, len);
 	output[len] = '\0';
