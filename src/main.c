@@ -2,8 +2,12 @@
 
 #include "csv_table.h"
 
-int main(void) {
+int main(int argc, char *argv[]) {
 	const char* csv_path = "./resources/sample_large.csv";
+	if (argc > 1) {
+		csv_path = argv[1];
+	}
+	
 	Table table;
 	CsvTableStatus stat = csv_table_load(csv_path, true, &table);
 
