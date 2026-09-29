@@ -103,7 +103,6 @@ int file_append(const char *data, const char *path) {
 	int status = 0;
 	if (ret != write_len) {
 		fprintf(stderr, "error appending contents to file\n");
-		fclose(fp);
 		status = 2;
 	}
 
