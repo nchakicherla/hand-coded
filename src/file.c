@@ -68,14 +68,27 @@ int file_write_all(const char *data, const char *path) {
 	size_t write_len = strlen(data);
 
 	size_t ret = fwrite(data, 1, write_len, fp);
+	// if (ret != write_len) {
+	// 	fprintf(stderr, "error writing file contents\n");
+	// 	fclose(fp);
+	// 	return 2;
+	// }
+
+	// fclose(fp);
+	int status = 0;
 	if (ret != write_len) {
 		fprintf(stderr, "error writing file contents\n");
-		fclose(fp);
-		return 2;
+		status = 2;
 	}
 
-	fclose(fp);
-	return 0;
+	if (fclose(fp) != 0) {
+		perror("error closing file");
+		if (status == 0) {
+			status = 3;
+		}
+	}
+
+	return status;
 }
 
 int file_append(const char *data, const char *path) {
@@ -87,12 +100,19 @@ int file_append(const char *data, const char *path) {
 
 	size_t write_len = strlen(data);
 	size_t ret = fwrite(data, 1, write_len, fp);
+	int status = 0;
 	if (ret != write_len) {
 		fprintf(stderr, "error appending contents to file\n");
 		fclose(fp);
-		return 2;
+		status = 2;
 	}
 
-	fclose(fp);
-	return 0;
+	if (fclose(fp) != 0) {
+		perror("error closing file");
+		if (status == 0) {
+			status = 3;
+		}
+	}
+
+	return status;
 }
