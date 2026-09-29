@@ -25,7 +25,18 @@ bool file_exists(const char *path) {
 	return false;
 }
 
+bool file_is_regular(const char *path) {
+	struct stat st;
+	return stat(path, &st) == 0 && S_ISREG(st.st_mode);
+}
+
 char *file_read_all(Arena *arena, const char *path, size_t *out_size) {
+	if (!file_is_regular(path)) {
+		fprintf(stderr, "not a regular file: %s\n", path);
+		return NULL;
+	}
+
+
 	FILE *fp = fopen(path, "rb");
 	if (!fp) {
 		fprintf(stderr, "error opening file to read: %s\n", path);

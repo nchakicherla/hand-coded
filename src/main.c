@@ -9,22 +9,18 @@ int main(int argc, char *argv[]) {
 	const char* csv_path = NULL;
 	bool has_header = true;
 
-	// if (argc == 1) {
-	// 	fprintf(stderr, "arguments missing\n");
-	// 	return 1;
-	// }
-
 	for (int i = 1; i < argc; i++) {
 		if (strcmp(argv[i], "--csv") == 0) {
-			if (++i >= argc) {
+			if (i + 1 >= argc || strncmp(argv[i + 1], "--", 2) == 0) {
 				fprintf(stderr, "--csv requires a path argument\n");
 				return 2;
 			}
-			if (!file_exists(argv[i])) {
+
+			csv_path = argv[++i];
+			if (!file_is_regular(argv[i])) {
 				fprintf(stderr, "--csv argument is an invalid path\n");
 				return 3;
 			}
-			csv_path = argv[i];
 			continue;
 		}
 		if (strcmp(argv[i], "--no-header") == 0) {
@@ -38,7 +34,6 @@ int main(int argc, char *argv[]) {
 	if (csv_path == NULL) {
 		fprintf(stderr, "Usage: %s --csv PATH [--no-header]\n", argv[0]);
 		return 5;
-		// printf usage
 	}
 
 	Table table;
