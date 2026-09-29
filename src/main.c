@@ -1,15 +1,37 @@
 #include <stdio.h>
+#include <stdbool.h>
+#include <string.h>
 
 #include "csv_table.h"
 
 int main(int argc, char *argv[]) {
-	const char* csv_path = "./resources/sample_large.csv";
-	if (argc > 1) {
-		csv_path = argv[1];
+	const char* csv_path = NULL;
+	bool has_header = true;
+
+	if (argc == 1) {
+		fprintf(stderr, "arguments missing\n");
+		return 1;
 	}
-	
+
+	for (int i = 1; i < argc; i++) {
+		if (strcmp(argv[i], "--csv") == 0) {
+			if (++i >= argc) {
+				fprintf(stderr, "--csv requires a path argument\n");
+				return 1;
+			}
+			csv_path = argv[i];
+			continue;
+		}
+		if (strcmp(argv[i], "--no-header") == 0) {
+			has_header = false;
+			continue;
+		}
+		fprintf(stderr, "unknown argument: %s\n", argv[i]);
+		return 1;
+	}
+
 	Table table;
-	CsvTableStatus stat = csv_table_load(csv_path, true, &table);
+	CsvTableStatus stat = csv_table_load(csv_path, has_header, &table);
 
 	switch (stat) {
 		case CSV_TABLE_ERR_FILE:
