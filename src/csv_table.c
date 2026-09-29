@@ -117,6 +117,12 @@ CsvTableStatus csv_table_load(const char *path, bool has_header, Table *out_tabl
 		arena_term(&scratch);
 		return CSV_TABLE_ERR_FILE;
 	}
+	// explicitly reject embedded NUL bytes in CSV
+	if (memchr(csv_buffer, '\0', csv_size) != NULL) {
+		fprintf(stderr, "CSV contains a NUL byte\n");
+		arena_term(&scratch);
+		return CSV_TABLE_ERR_PARSE;
+	}
 
 	CsvCounter counter = {0};
 
