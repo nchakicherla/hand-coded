@@ -66,16 +66,9 @@ int file_write_all(const char *data, const char *path) {
 	}
 
 	size_t write_len = strlen(data);
-
 	size_t ret = fwrite(data, 1, write_len, fp);
-	// if (ret != write_len) {
-	// 	fprintf(stderr, "error writing file contents\n");
-	// 	fclose(fp);
-	// 	return 2;
-	// }
-
-	// fclose(fp);
 	int status = 0;
+
 	if (ret != write_len) {
 		fprintf(stderr, "error writing file contents\n");
 		status = 2;

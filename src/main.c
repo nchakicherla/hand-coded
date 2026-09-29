@@ -3,21 +3,26 @@
 #include <string.h>
 
 #include "csv_table.h"
+#include "file.h"
 
 int main(int argc, char *argv[]) {
 	const char* csv_path = NULL;
 	bool has_header = true;
 
-	if (argc == 1) {
-		fprintf(stderr, "arguments missing\n");
-		return 1;
-	}
+	// if (argc == 1) {
+	// 	fprintf(stderr, "arguments missing\n");
+	// 	return 1;
+	// }
 
 	for (int i = 1; i < argc; i++) {
 		if (strcmp(argv[i], "--csv") == 0) {
 			if (++i >= argc) {
 				fprintf(stderr, "--csv requires a path argument\n");
-				return 1;
+				return 2;
+			}
+			if (!file_exists(argv[i])) {
+				fprintf(stderr, "--csv argument is an invalid path\n");
+				return 3;
 			}
 			csv_path = argv[i];
 			continue;
@@ -27,7 +32,13 @@ int main(int argc, char *argv[]) {
 			continue;
 		}
 		fprintf(stderr, "unknown argument: %s\n", argv[i]);
-		return 1;
+		return 4;
+	}
+
+	if (csv_path == NULL) {
+		fprintf(stderr, "Usage: %s --csv PATH [--no-header]\n", argv[0]);
+		return 5;
+		// printf usage
 	}
 
 	Table table;
@@ -36,13 +47,13 @@ int main(int argc, char *argv[]) {
 	switch (stat) {
 		case CSV_TABLE_ERR_FILE:
 			fprintf(stderr, "error: could not read CSV file\n");
-			return 1;
+			return 5;
 		case CSV_TABLE_ERR_JAGGED:
 			fprintf(stderr, "error: jagged CSV\n");
-			return 2;
+			return 6;
 		case CSV_TABLE_ERR_PARSE:
 			fprintf(stderr, "error: couldn't parse CSV\n");
-			return 3;
+			return 7;
 		case CSV_TABLE_OK:
 			break;
 	}
